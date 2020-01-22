@@ -107,7 +107,7 @@ app.put('/api/persons/:id', (request, response, next) => {
     .catch(error => next(error))
 })
 
-app.post('/api/persons', (request,response) => {
+app.post('/api/persons', (request,response, next) => {
     const person = request.body
 
     if(!person.name || !person.number){
@@ -115,12 +115,13 @@ app.post('/api/persons', (request,response) => {
           error: 'missing name and/or number'
       })
     }
-
+/*
     Person.find({}).then(people => {
       people.map(persons => persons.name === person.name ? 
         response.status(400).json({error: 'unique name required'}) : null
       )})
-
+*/
+   
     const personData = new Person({
         name: person.name,
         number: person.number,
@@ -128,7 +129,8 @@ app.post('/api/persons', (request,response) => {
 
     personData.save().then(savedPerson => {
       response.json(savedPerson.toJSON())
-    })  
+    })
+    .catch(error => next(error))  
 })
 
 const unknownEndpoint = (request, response) => {
@@ -142,8 +144,9 @@ const errorHandler = (error, request, response, next) => {
 
   if (error.name === 'CastError' && error.kind === 'ObjectId') {
     return response.status(400).send({ error: 'malformatted id' })
-  } 
-
+  } else if (error.name === 'ValidationError') {
+    return response.status(400).json({ error: error.message })
+  }
   next(error)
 }
 
